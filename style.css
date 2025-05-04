@@ -48,3 +48,11 @@ li {
     margin-bottom: 5px;
     border-radius: 5px;
 }
+
+#calendar {
+    margin-top: 20px;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}

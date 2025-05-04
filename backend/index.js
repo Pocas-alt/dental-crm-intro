@@ -23,6 +23,7 @@ const patientSchema = new mongoose.Schema({
     name: String,
     email: String,
     appointment: String,
+    doctor: String
 });
 
 const Patient = mongoose.model("Patient", patientSchema);
