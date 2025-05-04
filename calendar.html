@@ -16,6 +16,30 @@
         <h2>Appointment Calendar</h2>
         <div id="calendar"></div>
     </section>
+    <div id="modal" style="display: none;" class="modal">
+        <form id="modal-form" class="modal-content">
+            <h3>Patient Info</h3>
+            <input type="hidden" id="modal-id" />
+            <label>Name</label>
+            <input type="text" id="modal-name" required />
+            <label>Email</label>
+            <input type="email" id="modal-email" required />
+            <label>Doctor</label>
+            <select id="modal-doctor" required>
+                <option value="monika">Dr. Monika</option>
+                <option value="tomas">Dr. Tomas</option>
+                <option value="inga">Dr. Inga</option>
+            </select>
+            <label>Appointment</label>
+            <input type="datetime-local" id="modal-appointment" required />
+            <div style="margin-top: 10px;">
+                <button type="submit">Save</button>
+                <button type="button" onclick="closeModal()">Cancel</button>
+                <button type="button" id="modal-delete-button"
+                    style="background-color: crimson; color: white;">Delete</button>
+            </div>
+        </form>
+    </div>
 
     <script src="calendar.js"></script>
 </body>
