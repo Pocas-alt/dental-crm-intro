@@ -15,12 +15,15 @@ function openModal({ name = "", email = "", room = "room1", dateStr = "", endStr
     }
     // Set the end time: use endStr if provided, otherwise auto-calculate 30 min after dateStr if possible
     if (endStr) {
-        document.getElementById("modal-end").value = endStr;
+        const end = new Date(endStr);
+        const endHours = String(end.getHours()).padStart(2, '0');
+        const endMinutes = String(end.getMinutes()).padStart(2, '0');
+        document.getElementById("modal-end").value = `${endHours}:${endMinutes}`;
     } else if (dateStr) {
-        const defaultEnd = new Date(new Date(dateStr).getTime() + 30 * 60000)
-            .toISOString()
-            .slice(0, 16);
-        document.getElementById("modal-end").value = defaultEnd;
+        const defaultEndDate = new Date(new Date(dateStr).getTime() + 30 * 60000);
+        const endHours = String(defaultEndDate.getHours()).padStart(2, '0');
+        const endMinutes = String(defaultEndDate.getMinutes()).padStart(2, '0');
+        document.getElementById("modal-end").value = `${endHours}:${endMinutes}`;
     }
     document.getElementById("modal-id").value = _id || "";
 }
@@ -73,6 +76,15 @@ document.addEventListener("DOMContentLoaded", async function () {
         dateClick: function (info) {
             modalMode = "create";
             openModal({ dateStr: info.dateStr });
+        },
+        // Support selecting a time range by dragging
+        select: function (info) {
+            modalMode = "create";
+            openModal({
+                dateStr: info.startStr,
+                endStr: info.endStr,
+                room: info.resource?.id || "room1"
+            });
         },
         eventClick: function (info) {
             modalMode = "edit";
