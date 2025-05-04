@@ -1,10 +1,11 @@
 let modalMode = "create";
 let selectedEvent = null;
 
-function openModal({ name = "", email = "", room = "room1", dateStr = "", endStr = "", _id = null } = {}) {
+function openModal({ name = "", surname = "", phone = "", room = "room1", dateStr = "", endStr = "", _id = null } = {}) {
     document.getElementById("modal").classList.remove("hidden");
     document.getElementById("modal-name").value = name;
-    document.getElementById("modal-email").value = email;
+    document.getElementById("modal-surname").value = surname;
+    document.getElementById("modal-phone").value = phone;
     document.getElementById("modal-room").value = room;
     if (dateStr) {
         const date = new Date(dateStr);
@@ -50,14 +51,15 @@ document.addEventListener("DOMContentLoaded", async function () {
     ];
 
     const events = visits.map((v) => ({
-        title: v.patientId?.name || "Unknown",
+        title: `${v.patientId?.name || ""} ${v.patientId?.surname || ""}`.trim() || "Unknown",
         start: v.appointment,
         end: v.end,
         resourceId: v.room || "room1",
         extendedProps: {
             _id: v._id,
             patientId: v.patientId?._id,
-            email: v.patientId?.email || ""
+            phone: v.patientId?.phone || "",
+            surname: v.patientId?.surname || ""
         }
     }));
 
@@ -91,7 +93,8 @@ document.addEventListener("DOMContentLoaded", async function () {
             selectedEvent = info.event;
             openModal({
                 name: info.event.title,
-                email: info.event.extendedProps.email,
+                surname: info.event.extendedProps.surname || "",
+                phone: info.event.extendedProps.phone,
                 room: info.event.getResources()[0]?.id || "room1",
                 dateStr: info.event.start.toISOString().slice(0, 16),
                 endStr: info.event.end?.toISOString().slice(0, 16),
@@ -103,7 +106,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
             const updated = {
                 name: info.event.title,
-                email: info.event.extendedProps.email,
+                phone: info.event.extendedProps.phone,
                 appointment: info.event.start.toISOString(),
                 end: info.event.end?.toISOString(),
                 room: info.event._def.resourceIds[0] || 'room1'
@@ -122,19 +125,36 @@ document.addEventListener("DOMContentLoaded", async function () {
     const patients = await patientRes.json();
 
     const datalist = document.getElementById("modal-name-list");
-    const emailMap = {};
+    const phoneDatalist = document.getElementById("modal-phone-list");
+    const phoneMap = {};
+    const nameMap = {};
 
     patients.forEach((p) => {
-        const option = document.createElement("option");
-        option.value = p.name;
-        datalist.appendChild(option);
-        emailMap[p.name] = p.email;
+        const nameOption = document.createElement("option");
+        nameOption.value = p.name;
+        datalist.appendChild(nameOption);
+
+        const phoneOption = document.createElement("option");
+        phoneOption.value = p.phone;
+        phoneDatalist.appendChild(phoneOption);
+
+        phoneMap[p.phone] = { name: p.name, surname: p.surname };
+        nameMap[p.name] = { phone: p.phone, surname: p.surname };
     });
 
     document.getElementById("modal-name").addEventListener("input", function () {
         const selectedName = this.value;
-        if (emailMap[selectedName]) {
-            document.getElementById("modal-email").value = emailMap[selectedName];
+        if (nameMap[selectedName]) {
+            document.getElementById("modal-phone").value = nameMap[selectedName].phone;
+            document.getElementById("modal-surname").value = nameMap[selectedName].surname || "";
+        }
+    });
+
+    document.getElementById("modal-phone").addEventListener("input", function () {
+        const selectedPhone = this.value;
+        if (phoneMap[selectedPhone]) {
+            document.getElementById("modal-name").value = phoneMap[selectedPhone].name;
+            document.getElementById("modal-surname").value = phoneMap[selectedPhone].surname || "";
         }
     });
 
@@ -148,7 +168,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         e.preventDefault();
 
         const name = document.getElementById("modal-name").value.trim();
-        const email = document.getElementById("modal-email").value.trim();
+        const surname = document.getElementById("modal-surname").value.trim();
+        const phone = document.getElementById("modal-phone").value.trim();
         const room = document.getElementById("modal-room").value;
         const selectedTime = document.getElementById("modal-appointment").value;
         const baseDate = document.getElementById("modal").dataset.date;
@@ -169,7 +190,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         let patientId = null;
         try {
-            const searchRes = await fetch(`http://localhost:3000/patients/search?name=${encodeURIComponent(name)}`);
+            const searchRes = await fetch(`http://localhost:3000/patients/search?phone=${encodeURIComponent(phone)}&surname=${encodeURIComponent(surname)}`);
             if (searchRes.ok) {
                 const found = await searchRes.json();
                 patientId = found._id;
@@ -177,7 +198,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                 const createRes = await fetch("http://localhost:3000/patients", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ name, email })
+                    body: JSON.stringify({ name, surname, phone })
                 });
                 const created = await createRes.json();
                 patientId = created.patient._id;
@@ -197,14 +218,15 @@ document.addEventListener("DOMContentLoaded", async function () {
             });
             const result = await res.json();
             calendar.addEvent({
-                title: name,
+                title: `${name} ${surname}`.trim(),
                 start: appointment,
                 end,
                 resourceId: room,
                 extendedProps: {
                     _id: result.visit._id,
                     patientId,
-                    email
+                    phone,
+                    surname
                 }
             });
         } else if (modalMode === "edit" && selectedEvent) {
@@ -214,8 +236,9 @@ document.addEventListener("DOMContentLoaded", async function () {
                 body: JSON.stringify(visit)
             });
 
-            selectedEvent.setProp("title", name);
-            selectedEvent.setExtendedProp("email", email);
+            selectedEvent.setProp("title", `${name} ${surname}`.trim());
+            selectedEvent.setExtendedProp("phone", phone);
+            selectedEvent.setExtendedProp("surname", surname);
             selectedEvent.setStart(appointment);
             selectedEvent.setEnd(end);
             selectedEvent.setExtendedProp("room", room);

@@ -7,7 +7,9 @@
     <link rel="stylesheet" href="style.css">
 
     <!-- FullCalendar Scheduler bundle (all views and plugins included) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar-scheduler@6.1.8/index.global.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/index.global.min.css" />
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@fullcalendar/resource-timegrid@6.1.8/index.global.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar-scheduler@6.1.8/index.global.min.js"></script>
 </head>
 
@@ -24,8 +26,11 @@
             <label>Name</label>
             <input type="text" id="modal-name" list="modal-name-list" required />
             <datalist id="modal-name-list"></datalist>
-            <label>Email</label>
-            <input type="email" id="modal-email" required />
+            <label for="modal-surname">Surname</label>
+            <input type="text" id="modal-surname" />
+            <label>Phone</label>
+            <input type="tel" id="modal-phone" list="modal-phone-list" required />
+            <datalist id="modal-phone-list"></datalist>
             <label>Room</label>
             <select id="modal-room" required>
                 <option value="room1">Room 1</option>
