@@ -86,3 +86,21 @@ li {
 .hidden {
     display: none !important;
 }
+
+.patient-card {
+    background-color: #ffffff;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.patient-card p {
+    margin: 4px 0;
+}
+
+.patient-card button {
+    margin-right: 8px;
+    margin-top: 8px;
+}

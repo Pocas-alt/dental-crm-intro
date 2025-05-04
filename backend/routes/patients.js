@@ -30,4 +30,14 @@ router.get("/search", async (req, res) => {
     }
 });
 
+router.get("/:id", async (req, res) => {
+    try {
+        const patient = await Patient.findById(req.params.id);
+        if (!patient) return res.status(404).json({ error: "Patient not found" });
+        res.json(patient);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch patient" });
+    }
+});
+
 module.exports = router;

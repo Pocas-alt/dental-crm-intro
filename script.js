@@ -34,9 +34,14 @@ document.getElementById("patientForm").addEventListener("submit", async function
   const name = document.getElementById("name").value;
   const email = document.getElementById("email").value;
   const appointment = document.getElementById("appointment").value;
+  const birthDate = document.getElementById("birthDate").value;
+  const phone = document.getElementById("phone").value;
+  const personalId = document.getElementById("personalId").value;
+  const gender = document.getElementById("gender").value;
+  const notes = document.getElementById("notes").value;
   // const room = document.getElementById("room").value;
 
-  const patient = { name, email, appointment };
+  const patient = { name, email, appointment, birthDate, phone, personalId, gender, notes };
 
   if (editPatientId) {
     await fetch(`${API_URL}/${editPatientId}`, {
@@ -61,10 +66,18 @@ document.getElementById("patientForm").addEventListener("submit", async function
 
 function displayPatient(patient) {
   const patientList = document.getElementById("patientList");
-  const newItem = document.createElement("li");
+  const newItem = document.createElement("div");
+  newItem.classList.add("patient-card");
 
   newItem.innerHTML = `
-    ${patient.name} – ${patient.email} – ${new Date(patient.appointment).toLocaleString()} (${patient.room})
+    <p><strong>Name:</strong> ${patient.name}</p>
+    <p><strong>Email:</strong> ${patient.email}</p>
+    <p><strong>Appointment:</strong> ${new Date(patient.appointment).toLocaleString()}</p>
+    <p><strong>Birth Date:</strong> ${patient.birthDate ? new Date(patient.birthDate).toLocaleDateString() : ""}</p>
+    <p><strong>Phone:</strong> ${patient.phone || ""}</p>
+    <p><strong>Personal ID:</strong> ${patient.personalId || ""}</p>
+    <p><strong>Gender:</strong> ${patient.gender || ""}</p>
+    <p><strong>Notes:</strong> ${patient.notes || ""}</p>
     <button onclick="editPatient('${patient._id}')">✏️ Edit</button>
     <button onclick="deletePatient('${patient._id}', this)">🗑️ Delete</button>
   `;
@@ -84,6 +97,11 @@ function editPatient(id) {
       document.getElementById("name").value = patient.name;
       document.getElementById("email").value = patient.email;
       document.getElementById("appointment").value = new Date(patient.appointment).toISOString().slice(0, 16);
+      document.getElementById("birthDate").value = patient.birthDate ? new Date(patient.birthDate).toISOString().slice(0, 10) : "";
+      document.getElementById("phone").value = patient.phone || "";
+      document.getElementById("personalId").value = patient.personalId || "";
+      document.getElementById("gender").value = patient.gender || "";
+      document.getElementById("notes").value = patient.notes || "";
       //document.getElementById("room").value = patient.room;// Uncomment if you want to use additional patient data
       editPatientId = patient._id;
     });
