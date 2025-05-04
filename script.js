@@ -2,36 +2,30 @@ const API_URL = "http://localhost:3000/patients";
 let editPatientId = null;
 
 document.addEventListener("DOMContentLoaded", async function () {
-  const calendarEl = document.getElementById("calendar");
-
   const res = await fetch(API_URL);
   const patients = await res.json();
+  patients.forEach(displayPatient);
 
-  patients.forEach(displayPatient); // ✅ Moved here so both list + calendar load together
+  // Modal autocomplete logic (if exists)
+  // ... (unchanged)
 
-  const resources = [
-    { id: 'monika', title: 'Dr. Monika' },
-    { id: 'tomas', title: 'Dr. Tomas' },
-    { id: 'inga', title: 'Dr. Inga' }
-  ];
+  // Restore patient list autocomplete functionality
+  const listDatalist = document.getElementById("patientNames");
+  const listEmailMap = {};
 
-  const events = patients.map((p) => ({
-    title: p.name,
-    start: p.appointment,
-    resourceId: p.doctor || 'monika'
-  }));
-
-  const calendar = new FullCalendar.Calendar(calendarEl, {
-    schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
-    initialView: 'resourceTimeGridDay',
-    height: 'auto',
-    slotMinTime: "07:00:00",
-    slotMaxTime: "20:00:00",
-    resources: resources,
-    events: events
+  patients.forEach((p) => {
+    const option = document.createElement("option");
+    option.value = p.name;
+    listDatalist.appendChild(option);
+    listEmailMap[p.name] = p.email;
   });
 
-  calendar.render();
+  document.getElementById("name").addEventListener("input", function () {
+    const selectedName = this.value;
+    if (listEmailMap[selectedName]) {
+      document.getElementById("email").value = listEmailMap[selectedName];
+    }
+  });
 });
 
 document.getElementById("patientForm").addEventListener("submit", async function (event) {
@@ -40,21 +34,22 @@ document.getElementById("patientForm").addEventListener("submit", async function
   const name = document.getElementById("name").value;
   const email = document.getElementById("email").value;
   const appointment = document.getElementById("appointment").value;
-  const doctor = document.getElementById("doctor").value;
-  const patient = { name, email, appointment, doctor };
+  // const room = document.getElementById("room").value;
+
+  const patient = { name, email, appointment };
 
   if (editPatientId) {
     await fetch(`${API_URL}/${editPatientId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patient),
+      body: JSON.stringify(patient)
     });
     location.reload();
   } else {
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patient),
+      body: JSON.stringify(patient)
     });
     const result = await res.json();
     displayPatient(result.patient);
@@ -69,7 +64,7 @@ function displayPatient(patient) {
   const newItem = document.createElement("li");
 
   newItem.innerHTML = `
-    ${patient.name} – ${patient.email} – ${new Date(patient.appointment).toLocaleString()} (${patient.doctor})
+    ${patient.name} – ${patient.email} – ${new Date(patient.appointment).toLocaleString()} (${patient.room})
     <button onclick="editPatient('${patient._id}')">✏️ Edit</button>
     <button onclick="deletePatient('${patient._id}', this)">🗑️ Delete</button>
   `;
@@ -89,7 +84,7 @@ function editPatient(id) {
       document.getElementById("name").value = patient.name;
       document.getElementById("email").value = patient.email;
       document.getElementById("appointment").value = new Date(patient.appointment).toISOString().slice(0, 16);
-      document.getElementById("doctor").value = patient.doctor;
+      //document.getElementById("room").value = patient.room;// Uncomment if you want to use additional patient data
       editPatientId = patient._id;
     });
 }

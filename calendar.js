@@ -1,42 +1,54 @@
 let modalMode = "create";
 let selectedEvent = null;
 
-function openModal({ name = "", email = "", doctor = "monika", dateStr = "", _id = null } = {}) {
+function openModal({ name = "", email = "", room = "room1", dateStr = "", endStr = "", _id = null } = {}) {
     document.getElementById("modal").style.display = "block";
     document.getElementById("modal-name").value = name;
     document.getElementById("modal-email").value = email;
-    document.getElementById("modal-doctor").value = doctor;
+    document.getElementById("modal-room").value = room;
     document.getElementById("modal-appointment").value = dateStr;
+    // Set the end time: use endStr if provided, otherwise auto-calculate 30 min after dateStr if possible
+    if (endStr) {
+        document.getElementById("modal-end").value = endStr;
+    } else if (dateStr) {
+        const defaultEnd = new Date(new Date(dateStr).getTime() + 30 * 60000)
+            .toISOString()
+            .slice(0, 16);
+        document.getElementById("modal-end").value = defaultEnd;
+    }
     document.getElementById("modal-id").value = _id || "";
 }
 
 function closeModal() {
     document.getElementById("modal").style.display = "none";
     document.getElementById("modal-form").reset();
+    document.getElementById("modal-error").style.display = "none";
     modalMode = "create";
     selectedEvent = null;
 }
 
 document.addEventListener("DOMContentLoaded", async function () {
-    const API_URL = "http://localhost:3000/patients";
+    const API_URL = "http://localhost:3000/visits";
     const calendarEl = document.getElementById("calendar");
 
-    const res = await fetch(API_URL);
-    const patients = await res.json();
+    const res = await fetch("http://localhost:3000/visits");
+    const visits = await res.json();
 
     const resources = [
-        { id: 'monika', title: 'Dr. Monika' },
-        { id: 'tomas', title: 'Dr. Tomas' },
-        { id: 'inga', title: 'Dr. Inga' }
+        { id: 'room1', title: 'Room 1' },
+        { id: 'room2', title: 'Room 2' },
+        { id: 'room3', title: 'Room 3' }
     ];
 
-    const events = patients.map((p) => ({
-        title: p.name,
-        start: p.appointment,
-        resourceId: p.doctor || 'monika',
+    const events = visits.map((v) => ({
+        title: v.patientId?.name || "Unknown",
+        start: v.appointment,
+        end: v.end,
+        resourceId: v.room || "room1",
         extendedProps: {
-            _id: p._id,
-            email: p.email
+            _id: v._id,
+            patientId: v.patientId?._id,
+            email: v.patientId?.email || ""
         }
     }));
 
@@ -62,8 +74,9 @@ document.addEventListener("DOMContentLoaded", async function () {
             openModal({
                 name: info.event.title,
                 email: info.event.extendedProps.email,
-                doctor: info.event.getResources()[0]?.id || "monika",
+                room: info.event.getResources()[0]?.id || "room1",
                 dateStr: info.event.start.toISOString().slice(0, 16),
+                endStr: info.event.end?.toISOString().slice(0, 16),
                 _id: info.event.extendedProps._id
             });
         },
@@ -74,7 +87,8 @@ document.addEventListener("DOMContentLoaded", async function () {
                 name: info.event.title,
                 email: info.event.extendedProps.email,
                 appointment: info.event.start.toISOString(),
-                doctor: info.event.getResources()[0]?.id || 'monika'
+                end: info.event.end?.toISOString(),
+                room: info.event._def.resourceIds[0] || 'room1'
             };
 
             await fetch(`${API_URL}/${patientId}`, {
@@ -85,45 +99,100 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
     });
 
+    // Move patient fetch and autocomplete setup here
+    const patientRes = await fetch("http://localhost:3000/patients");
+    const patients = await patientRes.json();
+
+    const datalist = document.getElementById("modal-name-list");
+    const emailMap = {};
+
+    patients.forEach((p) => {
+        const option = document.createElement("option");
+        option.value = p.name;
+        datalist.appendChild(option);
+        emailMap[p.name] = p.email;
+    });
+
+    document.getElementById("modal-name").addEventListener("input", function () {
+        const selectedName = this.value;
+        if (emailMap[selectedName]) {
+            document.getElementById("modal-email").value = emailMap[selectedName];
+        }
+    });
+
     calendar.render();
 
     document.getElementById("modal-form").addEventListener("submit", async function (e) {
         e.preventDefault();
-        const name = document.getElementById("modal-name").value;
-        const email = document.getElementById("modal-email").value;
-        const doctor = document.getElementById("modal-doctor").value;
+
+        const name = document.getElementById("modal-name").value.trim();
+        const email = document.getElementById("modal-email").value.trim();
+        const room = document.getElementById("modal-room").value;
         const appointment = document.getElementById("modal-appointment").value;
+        const end = document.getElementById("modal-end").value;
         const id = document.getElementById("modal-id").value;
 
-        const patient = { name, email, appointment, doctor };
+        if (new Date(end) <= new Date(appointment)) {
+            const errorBox = document.getElementById("modal-error");
+            errorBox.textContent = "";
+            errorBox.style.display = "block";
+            errorBox.innerText = "End time must be after start time.";
+            return;
+        }
+
+        let patientId = null;
+        try {
+            const searchRes = await fetch(`http://localhost:3000/patients/search?name=${encodeURIComponent(name)}`);
+            if (searchRes.ok) {
+                const found = await searchRes.json();
+                patientId = found._id;
+            } else {
+                const createRes = await fetch("http://localhost:3000/patients", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, email })
+                });
+                const created = await createRes.json();
+                patientId = created.patient._id;
+            }
+        } catch (err) {
+            console.error("Patient resolution error:", err);
+            return;
+        }
+
+        const visit = { patientId, appointment, end, room };
 
         if (modalMode === "create") {
             const res = await fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(patient)
+                body: JSON.stringify(visit)
             });
             const result = await res.json();
             calendar.addEvent({
-                title: result.patient.name,
-                start: result.patient.appointment,
-                resourceId: result.patient.doctor,
+                title: name,
+                start: appointment,
+                end,
+                resourceId: room,
                 extendedProps: {
-                    _id: result.patient._id,
-                    email: result.patient.email
+                    _id: result.visit._id,
+                    patientId,
+                    email
                 }
             });
         } else if (modalMode === "edit" && selectedEvent) {
             await fetch(`${API_URL}/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(patient)
+                body: JSON.stringify(visit)
             });
 
             selectedEvent.setProp("title", name);
             selectedEvent.setExtendedProp("email", email);
             selectedEvent.setStart(appointment);
-            selectedEvent.setResources([{ id: doctor }]);
+            selectedEvent.setEnd(end);
+            selectedEvent.setExtendedProp("room", room);
+            selectedEvent.setProp("resourceId", room);
         }
 
         closeModal();

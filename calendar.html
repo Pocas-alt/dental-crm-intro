@@ -17,21 +17,25 @@
         <div id="calendar"></div>
     </section>
     <div id="modal" style="display: none;" class="modal">
+        <div id="modal-error" style="color: red; display: none; margin-bottom: 10px;"></div>
         <form id="modal-form" class="modal-content">
             <h3>Patient Info</h3>
             <input type="hidden" id="modal-id" />
             <label>Name</label>
-            <input type="text" id="modal-name" required />
+            <input type="text" id="modal-name" list="modal-name-list" required />
+            <datalist id="modal-name-list"></datalist>
             <label>Email</label>
             <input type="email" id="modal-email" required />
-            <label>Doctor</label>
-            <select id="modal-doctor" required>
-                <option value="monika">Dr. Monika</option>
-                <option value="tomas">Dr. Tomas</option>
-                <option value="inga">Dr. Inga</option>
+            <label>Room</label>
+            <select id="modal-room" required>
+                <option value="room1">Room 1</option>
+                <option value="room2">Room 2</option>
+                <option value="room3">Room 3</option>
             </select>
             <label>Appointment</label>
             <input type="datetime-local" id="modal-appointment" required />
+            <label>End Time</label>
+            <input type="datetime-local" id="modal-end" required />
             <div style="margin-top: 10px;">
                 <button type="submit">Save</button>
                 <button type="button" onclick="closeModal()">Cancel</button>
