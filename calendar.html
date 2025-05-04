@@ -16,7 +16,7 @@
         <h2>Appointment Calendar</h2>
         <div id="calendar"></div>
     </section>
-    <div id="modal" style="display: none;" class="modal">
+    <div id="modal" class="modal hidden">
         <div id="modal-error" style="color: red; display: none; margin-bottom: 10px;"></div>
         <form id="modal-form" class="modal-content">
             <h3>Patient Info</h3>
@@ -32,10 +32,10 @@
                 <option value="room2">Room 2</option>
                 <option value="room3">Room 3</option>
             </select>
-            <label>Appointment</label>
-            <input type="datetime-local" id="modal-appointment" required />
+            <label>Appointment Time</label>
+            <input type="time" id="modal-appointment" step="60" required />
             <label>End Time</label>
-            <input type="datetime-local" id="modal-end" required />
+            <input type="time" id="modal-end" step="60" required />
             <div style="margin-top: 10px;">
                 <button type="submit">Save</button>
                 <button type="button" onclick="closeModal()">Cancel</button>

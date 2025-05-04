@@ -2,11 +2,17 @@ let modalMode = "create";
 let selectedEvent = null;
 
 function openModal({ name = "", email = "", room = "room1", dateStr = "", endStr = "", _id = null } = {}) {
-    document.getElementById("modal").style.display = "block";
+    document.getElementById("modal").classList.remove("hidden");
     document.getElementById("modal-name").value = name;
     document.getElementById("modal-email").value = email;
     document.getElementById("modal-room").value = room;
-    document.getElementById("modal-appointment").value = dateStr;
+    if (dateStr) {
+        const date = new Date(dateStr);
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        document.getElementById("modal-appointment").value = `${hours}:${minutes}`;
+        document.getElementById("modal").dataset.date = dateStr; // store original date
+    }
     // Set the end time: use endStr if provided, otherwise auto-calculate 30 min after dateStr if possible
     if (endStr) {
         document.getElementById("modal-end").value = endStr;
@@ -20,7 +26,7 @@ function openModal({ name = "", email = "", room = "room1", dateStr = "", endStr
 }
 
 function closeModal() {
-    document.getElementById("modal").style.display = "none";
+    document.getElementById("modal").classList.add("hidden");
     document.getElementById("modal-form").reset();
     document.getElementById("modal-error").style.display = "none";
     modalMode = "create";
@@ -122,13 +128,22 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     calendar.render();
 
+    document.getElementById("modal").addEventListener("click", (e) => {
+        if (e.target.id === "modal") closeModal();
+    });
+
     document.getElementById("modal-form").addEventListener("submit", async function (e) {
         e.preventDefault();
 
         const name = document.getElementById("modal-name").value.trim();
         const email = document.getElementById("modal-email").value.trim();
         const room = document.getElementById("modal-room").value;
-        const appointment = document.getElementById("modal-appointment").value;
+        const selectedTime = document.getElementById("modal-appointment").value;
+        const baseDate = document.getElementById("modal").dataset.date;
+        const fullStart = new Date(baseDate);
+        const [h, m] = selectedTime.split(":");
+        fullStart.setHours(+h, +m, 0, 0);
+        const appointment = fullStart.toISOString();
         const end = document.getElementById("modal-end").value;
         const id = document.getElementById("modal-id").value;
 
