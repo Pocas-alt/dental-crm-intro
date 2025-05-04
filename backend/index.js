@@ -27,10 +27,25 @@ const patientSchema = new mongoose.Schema({
 
 const Patient = mongoose.model("Patient", patientSchema);
 
-// 🧾 Get all patients
+// Routes
+
+// 📄 Get all patients
 app.get("/patients", async (req, res) => {
     const patients = await Patient.find();
     res.json(patients);
+});
+
+// 📄 Get a single patient by ID (needed for Edit)
+app.get("/patients/:id", async (req, res) => {
+    try {
+        const patient = await Patient.findById(req.params.id);
+        if (!patient) {
+            return res.status(404).json({ error: "Patient not found" });
+        }
+        res.json(patient);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch patient" });
+    }
 });
 
 // ➕ Add a patient
@@ -38,6 +53,28 @@ app.post("/patients", async (req, res) => {
     const patient = new Patient(req.body);
     await patient.save();
     res.status(201).json({ message: "Patient saved to MongoDB", patient });
+});
+
+// 📝 Update patient
+app.put("/patients/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updated = await Patient.findByIdAndUpdate(id, req.body, { new: true });
+        res.json({ patient: updated });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to update patient" });
+    }
+});
+
+// 🧹 Delete patient
+app.delete("/patients/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Patient.findByIdAndDelete(id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to delete patient" });
+    }
 });
 
 // 🔊 Start server
